@@ -1,18 +1,17 @@
-const express=require('express');
-const app=express();
-require('dotenv').config();
-const cors=require('cors');
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const express = require("express");
+const app = express();
+require("dotenv").config();
+const cors = require("cors");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
 const port = Number(process.env.PORT) || 3000;
 
-const mongoUsername=process.env.MONGO_USERNAME;
-const mongoPassword=process.env.MONGO_PASSWORD;
+const mongoUsername = process.env.MONGO_USERNAME;
+const mongoPassword = process.env.MONGO_PASSWORD;
 
 const uri = `mongodb+srv://${mongoUsername}:${mongoPassword}@cluster0.26qzwj8.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 app.use(cors());
 app.use(express.json());
-
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -20,75 +19,78 @@ const client = new MongoClient(uri, {
     version: ServerApiVersion.v1,
     strict: true,
     deprecationErrors: true,
-  }
+  },
 });
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
-       const carDB = client.db("carDB");
-       const servicesClr = carDB.collection("servicesClr");
-      const orderClr=carDB.collection("order")
+    const carDB = client.db("carDB");
+    const servicesClr = carDB.collection("servicesClr");
+    const orderClr = carDB.collection("order");
 
+    app.get("/services", async (req, res) => {
+      const result = await servicesClr.find().toArray();
 
-     app.get('/services', async(req,res)=>{
-    
+      res.status(200).json({
+        message: "All Services",
+        data: result,
+      });
+    });
 
-        const result=await servicesClr.find().toArray();
+    //single services data
+    app.get("/services/:id", async (req, res) => {
+      const id = req.params.id;
+
+      try {
+        const query = { _id: new ObjectId(id) }; // MongoDB _id object বানানো
+        const result = await servicesClr.findOne(query);
+
+        if (!result) {
+          return res.status(404).json({ message: "Service not found" });
+        }
 
         res.status(200).json({
-            message:'All Services',
-            data:result,
-        })
-     })
-
-
-
-
-     //single services data
-     app.get('/services/:id', async (req, res) => {
-        const id = req.params.id;
-
-        try {
-            const query = { _id: new ObjectId(id) }; // MongoDB _id object বানানো
-            const result = await servicesClr.findOne(query);
-
-            if (!result) {
-            return res.status(404).json({ message: 'Service not found' });
-            }
-
-            res.status(200).json({
-            message: 'Single Service',
-            data: result,
-            });
-        } catch (error) {
-            res.status(500).json({ message: 'Invalid ID format', error: error.message });
-        }
+          message: "Single Service",
+          data: result,
         });
+      } catch (error) {
+        res
+          .status(500)
+          .json({ message: "Invalid ID format", error: error.message });
+      }
+    });
 
+    app.post("/order", async (req, res) => {
+      const order = req.body;
 
-     app.post('/order',async (req, res)=>{
+      const result = await orderClr.insertOne(order);
 
-          const order=req.body;
+      if (result) {
+        res.status(200).json({
+          message: "order confirm",
+          success: true,
+        });
+      }
+    });
 
-          const result = await orderClr.insertOne(order)
+    app.get("/vieworder", async (req, res) => {
 
-          if(result){
+      const result = await orderClr.find().toArray();
 
-            res.status(200).json({
-                message:'order confirm',
-                success:true
-            })
-          }
-
-
-
-
-     })
+      if (result) {
+        res.status(200).json({
+          message: "all order",
+          data: result,
+        });
+      }
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    console.log(
+      "Pinged your deployment. You successfully connected to MongoDB!"
+    );
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
@@ -96,8 +98,6 @@ async function run() {
 }
 run().catch(console.dir);
 
-
-app.listen(port, ()=>{
-
-    console.log('server is running ')
-})
+app.listen(port, () => {
+  console.log("server is running ");
+});
