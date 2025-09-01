@@ -86,6 +86,40 @@ async function run() {
       }
     });
 
+     app.delete("/order/:id", async (req, res) => {
+
+      const {id}=req.params;
+      const query={_id: new ObjectId(id)}
+      const result = await orderClr.deleteOne(query);
+
+      if (result) {
+        res.status(200).json({
+          message: "order confirm",
+          success: true,
+          data:result
+        });
+      }
+    });
+
+
+    app.put("/order/:id", async (req, res) => {
+
+      const {status }=req.body;
+      const {id}=req.params;
+
+      const query={_id: new ObjectId(id)}
+      const updateDoc = { $set: { status } }; // update করার ডেটা
+
+      const result = await orderClr.updateOne(query, updateDoc);
+      if (result) {
+        res.status(200).json({
+          message: "success update",
+          success: true,
+          data:result
+        });
+      }
+    });
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
