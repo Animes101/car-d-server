@@ -15,8 +15,8 @@ const mongoPassword = process.env.MONGO_PASSWORD;
 const uri = `mongodb+srv://${mongoUsername}:${mongoPassword}@cluster0.26qzwj8.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 app.use(cors({
 origin:['http://localhost:5173'],
-credentials:true
-}));
+credentials:true}))
+
 app.use(express.json());
 app.use(cookieParser());
 
@@ -32,37 +32,9 @@ const client = new MongoClient(uri, {
 
 // middlewares
 
-const logger=async (req,res,next)=>{
-
-  console.log('called', req.host, req.originalUrl)
-  next()
-
-}
-
-const verifyToken=(req,res,next)=>{
-
-  const token=req.cookies?.token;
-
-  console.log(token)
-  if(!token){
-    return res.status(401).send({message: 'not autorizead'})
-  }
 
 
-  jwt.verify(token,process.env.SECRITE_TOKEN  , function(err, decoded) {
 
-
-    if(err){
-      return res.status(401).send({message:'unOthorizes'})
-    }
-
-     req.user=decoded;
-
-    next()
-
-    });
-
-}
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
@@ -72,19 +44,18 @@ async function run() {
     const orderClr = carDB.collection("order");
 
     // auth related api
-    app.post('/jwt', logger, async(req,res)=>{
-      const user=req.body;
-      const token=jwt.sign(user,process.env.SECRITE_TOKEN , { expiresIn: '1h' });
-      console.log(user);
-      res
-      .cookie('token', token,{httpOnly:true, secure:false, sameSite:false})
-      .json(success=true);
+    app.post('/login', async(req,res)=>{
+      const email=req.body.email;
+
+      
+      console.log(email);
+      
     })
     
 
     // services related api
 
-    app.get("/services", verifyToken, logger, async (req, res) => {
+    app.get("/services",  async (req, res) => {
 
       console.log(req.user)
       const result = await servicesClr.find().toArray();
@@ -131,7 +102,7 @@ async function run() {
       }
     });
 
-    app.get("/vieworder", logger, async (req, res) => {
+    app.get("/vieworder", async (req, res) => {
 
       console.log(req.cookies.token)
 
