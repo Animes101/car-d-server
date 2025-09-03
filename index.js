@@ -2,8 +2,8 @@ const express = require("express");
 const app = express();
 require("dotenv").config();
 const cors = require("cors");
-const jwt = require('jsonwebtoken');
-const cookieParser = require('cookie-parser')
+const jwt = require("jsonwebtoken");
+const cookieParser = require("cookie-parser");
 
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
@@ -13,9 +13,12 @@ const mongoUsername = process.env.MONGO_USERNAME;
 const mongoPassword = process.env.MONGO_PASSWORD;
 
 const uri = `mongodb+srv://${mongoUsername}:${mongoPassword}@cluster0.26qzwj8.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
-app.use(cors({
-origin:['http://localhost:5173'],
-credentials:true}))
+app.use(
+  cors({
+    origin: ["http://localhost:5173"],
+    credentials: true,
+  })
+);
 
 app.use(express.json());
 app.use(cookieParser());
@@ -29,11 +32,29 @@ const client = new MongoClient(uri, {
   },
 });
 
+// middlewares jwt
 
-// middlewares
+const logger = (req, res, next) => {
+  console.log(req.method, req.url);
 
+  next();
+};
 
+const vefifyToken = (req, res, next) => {
+  const token = req.cookies.acToken;
 
+  if (!token) {
+    return res.status(401).send({ message: "aunAuthorizes" });
+  }
+  jwt.verify(token, process.env.SECRITE_TOKEN, (err, decoded) => {
+    if (err) {
+      return res.status(401).send("unAuthorizes");
+    }
+    req.user = decoded;
+
+    next();
+  });
+};
 
 async function run() {
   try {
@@ -44,20 +65,26 @@ async function run() {
     const orderClr = carDB.collection("order");
 
     // auth related api
-    app.post('/login', async(req,res)=>{
-      const email=req.body.email;
+    app.post("/login", async (req, res) => {
+      const email = req.body.email;
 
-      
-      console.log(email);
-      
-    })
-    
+      const token = jwt.sign({ email }, process.env.SECRITE_TOKEN, {
+        expiresIn: "1h",
+      });
+
+      res
+        .cookie("acToken", token, {
+          httpOnly: true,
+          secure: true,
+          sameSite: "none",
+        })
+        .json({ success: true });
+    });
 
     // services related api
 
-    app.get("/services",  async (req, res) => {
-
-      console.log(req.user)
+    app.get("/services", async (req, res) => {
+      console.log(req.user);
       const result = await servicesClr.find().toArray();
 
       res.status(200).json({
@@ -102,10 +129,8 @@ async function run() {
       }
     });
 
-    app.get("/vieworder", async (req, res) => {
-
-      console.log(req.cookies.token)
-
+    app.get("/vieworder", vefifyToken, logger, async (req, res) => {
+      console.log(req.user);
       const result = await orderClr.find().toArray();
 
       if (result) {
@@ -116,28 +141,25 @@ async function run() {
       }
     });
 
-     app.delete("/order/:id", async (req, res) => {
-
-      const {id}=req.params;
-      const query={_id: new ObjectId(id)}
+    app.delete("/order/:id", async (req, res) => {
+      const { id } = req.params;
+      const query = { _id: new ObjectId(id) };
       const result = await orderClr.deleteOne(query);
 
       if (result) {
         res.status(200).json({
           message: "order confirm",
           success: true,
-          data:result
+          data: result,
         });
       }
     });
 
-
     app.put("/order/:id", async (req, res) => {
+      const { status } = req.body;
+      const { id } = req.params;
 
-      const {status }=req.body;
-      const {id}=req.params;
-
-      const query={_id: new ObjectId(id)}
+      const query = { _id: new ObjectId(id) };
       const updateDoc = { $set: { status } }; // update করার ডেটা
 
       const result = await orderClr.updateOne(query, updateDoc);
@@ -145,7 +167,7 @@ async function run() {
         res.status(200).json({
           message: "success update",
           success: true,
-          data:result
+          data: result,
         });
       }
     });
