@@ -13,10 +13,13 @@ const mongoUsername = process.env.MONGO_USERNAME;
 const mongoPassword = process.env.MONGO_PASSWORD;
 
 const uri = `mongodb+srv://${mongoUsername}:${mongoPassword}@cluster0.26qzwj8.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
+
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
-    credentials: true,
+    origin: "*", // সব origin allow করলো
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials:true,
   })
 );
 
