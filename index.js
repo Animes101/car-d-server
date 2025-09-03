@@ -23,6 +23,13 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
+
+
+app.get("/", (req, res) => {
+  res.send("Backend is running fine 🚀");
+});
+
+
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
@@ -59,7 +66,7 @@ const vefifyToken = (req, res, next) => {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
     const carDB = client.db("carDB");
     const servicesClr = carDB.collection("servicesClr");
     const orderClr = carDB.collection("order");
@@ -105,6 +112,7 @@ async function run() {
           return res.status(404).json({ message: "Service not found" });
         }
 
+      
         res.status(200).json({
           message: "Single Service",
           data: result,
@@ -184,6 +192,8 @@ async function run() {
 }
 run().catch(console.dir);
 
-app.listen(port, () => {
-  console.log("server is running ");
-});
+// app.listen(port, () => {
+//   console.log("server is running ");
+// });
+
+module.exports = app;
