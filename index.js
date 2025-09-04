@@ -16,9 +16,7 @@ const uri = `mongodb+srv://${mongoUsername}:${mongoPassword}@cluster0.26qzwj8.mo
 
 app.use(
   cors({
-    origin: "*", // সব origin allow করলো
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    origin:[ "http://localhost:5173", "https://car-doctro.firebaseapp.com", "https://car-doctro.web.app" ],
     credentials:true,
   })
 );
@@ -66,6 +64,15 @@ const vefifyToken = (req, res, next) => {
   });
 };
 
+
+
+const cookieOprion={
+          httpOnly: true,
+          secure: process.env.NODE_ENV == 'production' ? true : false,
+          sameSite: process.env.NODE_ENV === 'production' ? "node": "strict",  
+  
+
+}
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
@@ -83,11 +90,7 @@ async function run() {
       });
 
       res
-        .cookie("acToken", token, {
-          httpOnly: true,
-          secure: true,
-          sameSite: "none",
-        })
+        .cookie("acToken", token, cookieOprion )
         .json({ success: true });
     });
 
@@ -184,10 +187,10 @@ async function run() {
     });
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
+    // await client.db("admin").command({ ping: 1 });
+    // console.log(
+    //   "Pinged your deployment. You successfully connected to MongoDB!"
+    // );
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
