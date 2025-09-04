@@ -43,12 +43,12 @@ const client = new MongoClient(uri, {
 // middlewares jwt
 
 const logger = (req, res, next) => {
-  console.log(req.method, req.url);
-
+  
   next();
 };
 
 const vefifyToken = (req, res, next) => {
+
   const token = req.cookies.acToken;
 
   if (!token) {
@@ -68,10 +68,8 @@ const vefifyToken = (req, res, next) => {
 
 const cookieOprion={
           httpOnly: true,
+          sameSite: process.env.NODE_ENV === 'production' ? "none": "strict",  
           secure: process.env.NODE_ENV == 'production' ? true : false,
-          sameSite: process.env.NODE_ENV === 'production' ? "node": "strict",  
-  
-
 }
 async function run() {
   try {
@@ -89,9 +87,9 @@ async function run() {
         expiresIn: "1h",
       });
 
-      res
-        .cookie("acToken", token, cookieOprion )
-        .json({ success: true });
+
+      res.cookie("acToken", token, cookieOprion).json({ success: true });
+
     });
 
     // services related api
